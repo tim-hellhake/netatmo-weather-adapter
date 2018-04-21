@@ -1,0 +1,60 @@
+{
+  "name": "netatmo-weather-adapter",
+  "version": "0.0.0",
+  "description": "WoT adapter for netatmo weather stations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/freaktechnik/netatmo-weather-adapter.git"
+  },
+  "keywords": [
+    "adapter",
+    "webofthings",
+    "thing",
+    "wot",
+    "iot",
+    "netatmo",
+    "weather"
+  ],
+  "author": "Martin Giger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/freaktechnik/netatmo-weather-adapter/issues"
+  },
+  "homepage": "https://github.com/freaktechnik/netatmo-weather-adapter#readme",
+  "moziot": {
+    "api": {
+      "min": 1,
+      "max": 2
+    },
+    "plugin": true,
+    "exec": "{nodeLoader} {path}",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "description": "Netatmo API Client ID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Netatmo API Client Secret"
+        },
+        "username": {
+          "type": "string",
+          "description": "Netatmo Username"
+        },
+        "password": {
+          "type": "string",
+          "description": "Netatmo Password"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "netatmo": "^2.2.0"
+  }
+}
