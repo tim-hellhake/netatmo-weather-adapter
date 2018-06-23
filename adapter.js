@@ -28,11 +28,7 @@ class NetatmoProperty extends Property {
     }
 
     async setValue(value) {
-        if(value !== this.value) {
-            this.setCachedValue(value);
-            await this.device.notifyPropertyChanged(this);
-        }
-        return this.value;
+        return Promise.reject("Read-only property");
     }
 }
 
@@ -85,12 +81,8 @@ class WeatherStation extends Device {
         const property = this.properties.get(propertyName);
         if(property.value != value) {
             property.setCachedValue(value);
-            super.notifyPropertyChanged(property);
+            this.notifyPropertyChanged(property);
         }
-    }
-
-    notifyPropertyChanged() {
-        throw new Error("Can only read station data");
     }
 
     updateProperties(netatmoDevice) {
