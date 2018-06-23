@@ -32,7 +32,7 @@ class NetatmoProperty extends Property {
 
 const UNITS = {
     Temperature: "celsius",
-    Humidty: "percent",
+    Humidity: "percent",
     Pressure: "mbar",
     Noise: "dB",
     CO2: "ppm",
@@ -144,6 +144,9 @@ class NetatmoWeatherAdapter extends Adapter {
             if(!err) {
                 device.updateProperties(data[0]);
             }
+            else {
+                console.error(err);
+            }
         });
     }
 
@@ -153,6 +156,9 @@ class NetatmoWeatherAdapter extends Adapter {
                 for(const device of devices) {
                     this.addDevice(device);
                 }
+            }
+            else {
+                console.error(err);
             }
         });
     }
