@@ -2,11 +2,10 @@
 
 const Netatmo = require("netatmo");
 
-let Adapter, Device, Constants, Property;
+let Adapter, Device, Property;
 try {
     Adapter = require('../adapter');
     Device = require('../device');
-    Constants = require('../constants');
     Property = require('../property');
 }
 catch (e) {
@@ -17,7 +16,6 @@ catch (e) {
     const gwa = require('gateway-addon');
     Adapter = gwa.Adapter;
     Device = gwa.Device;
-    Constants = gwa.Constants;
     Property = gwa.Property;
 }
 
