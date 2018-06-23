@@ -1,8 +1,9 @@
 {
   "name": "netatmo-weather-adapter",
+  "display_name": "Netatmo Weather Station",
   "version": "0.0.0",
   "description": "WoT adapter for netatmo weather stations",
-  "main": "index.js",
+  "main": "adapter.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -25,6 +26,7 @@
     "url": "https://github.com/freaktechnik/netatmo-weather-adapter/issues"
   },
   "homepage": "https://github.com/freaktechnik/netatmo-weather-adapter#readme",
+  "files": [ "adapter.js" ],
   "moziot": {
     "api": {
       "min": 1,
@@ -35,11 +37,11 @@
     "schema": {
       "type": "object",
       "properties": {
-        "clientID": {
+        "client_id": {
           "type": "string",
           "description": "Netatmo API Client ID"
         },
-        "clientSecret": {
+        "client_secret": {
           "type": "string",
           "description": "Netatmo API Client Secret"
         },
@@ -55,6 +57,6 @@
     }
   },
   "dependencies": {
-    "netatmo": "^2.2.0"
+    "netatmo": "^2.2.1"
   }
 }
