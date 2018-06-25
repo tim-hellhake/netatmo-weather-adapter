@@ -52,12 +52,18 @@ const STATION_TYPE = {
 };
 
 class WeatherStation extends Device {
-    constructor(adapter, netatmoDevice) {
+    constructor(adapter, netatmoDevice, parent) {
         super(adapter, netatmoDevice._id);
         this.name = netatmoDevice.module_name;
         this.description = STATION_TYPE[netatmoDevice.type];
         this.uiHref = "https://my.netatmo.com/app/station";
         this.canUpdate = netatmoDevice.type == 'NAMain';
+        this.parent = parent;
+        this.pollingFor = new Set();
+
+        if(this.canUpdate && this.parent) {
+            console.warn("Device can both update itself and has a parent.");
+        }
 
         for(const dataType of netatmoDevice.data_type) {
             this.properties.set(dataType, new NetatmoProperty(this, dataType, {
@@ -94,16 +100,30 @@ class WeatherStation extends Device {
         }
     }
 
-    startPolling() {
+    startPolling(id = this.id) {
         // Measurements seem to be taken about every 5 minutes, unless there is an on-demand measurement.
         if(this.canUpdate) {
-            this.iid = setInterval(() => this.adapter.updateDevice(this), 5 * 60 * 1000);
+            this.pollingFor.add(id);
+            if(!this.iid) {
+                this.iid = setInterval(() => this.adapter.updateDevice(this), 5 * 60 * 1000);
+            }
+        }
+        else if(this.parent) {
+            this.parent.startPolling(id);
         }
     }
 
-    stopPolling() {
-        if(this.iid) {
-            clearInterval(this.iid);
+    stopPolling(id = this.id) {
+        if(this.canUpdate && this.iid) {
+            this.pollingFor.delete(id);
+            if(this.pollingFor.size == 0) {
+                clearInterval(this.iid);
+                this.iid = undefined;
+                this.pollingFor.clear();
+            }
+        }
+        else if(this.parent) {
+            this.parent.stopPolling(id);
         }
     }
 }
@@ -118,13 +138,18 @@ class NetatmoWeatherAdapter extends Adapter {
         this.startPairing();
     }
 
-    addDevice(device) {
+    addDevice(device, parent) {
+        let instance;
         if(!(device._id in this.devices)) {
-            const instance = new WeatherStation(this, device);
+            instance = new WeatherStation(this, device, parent);
+        }
+        else {
+            instance = this.getDevice(device._id);
+            instance.startPolling();
         }
         if(device.modules && device.modules.length) {
             for(const d of device.modules) {
-                this.addDevice(d);
+                this.addDevice(d, instance);
             }
         }
     }
@@ -175,9 +200,19 @@ class NetatmoWeatherAdapter extends Adapter {
 
     unload() {
         for(const d in this.devices) {
-            this.devices[d].stopPolling();
+            if(this.devices.hasOwnProperty(d)) {
+                this.getDevice(d).stopPolling();
+            }
         }
         return super.unload();
+    }
+
+    removeThing(device) {
+        device.stopPolling();
+    }
+
+    cancelRemoveThing(device) {
+        device.startPolling();
     }
 }
 
