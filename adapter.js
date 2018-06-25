@@ -57,9 +57,10 @@ class WeatherStation extends Device {
         this.name = netatmoDevice.module_name;
         this.description = STATION_TYPE[netatmoDevice.type];
         this.uiHref = "https://my.netatmo.com/app/station";
+        this.canUpdate = netatmoDevice.type == 'NAMain';
 
         for(const dataType of netatmoDevice.data_type) {
-            this.properties.set(dataType, new NetatmoProperty(this, 'dataType', {
+            this.properties.set(dataType, new NetatmoProperty(this, dataType, {
                 type: "number",
                 unit: UNITS[dataType]
             }, netatmoDevice.dashboard_data[dataType]));
@@ -76,7 +77,7 @@ class WeatherStation extends Device {
     }
 
     updateProp(propertyName, value) {
-        const property = this.properties.get(propertyName);
+        const property = this.findProperty(propertyName);
         if(property.value != value) {
             property.setCachedValue(value);
             this.notifyPropertyChanged(property);
@@ -95,11 +96,15 @@ class WeatherStation extends Device {
 
     startPolling() {
         // Measurements seem to be taken about every 5 minutes, unless there is an on-demand measurement.
-        this.iid = setInterval(() => this.adapter.updateDevice(this), 5 * 60 * 1000);
+        if(this.canUpdate) {
+            this.iid = setInterval(() => this.adapter.updateDevice(this), 5 * 60 * 1000);
+        }
     }
 
     stopPolling() {
-        clearInterval(this.iid);
+        if(this.iid) {
+            clearInterval(this.iid);
+        }
     }
 }
 
@@ -114,15 +119,12 @@ class NetatmoWeatherAdapter extends Adapter {
     }
 
     addDevice(device) {
-        if(device._id in this.devices) {
-            return;
-        }
-        else {
+        if(!(device._id in this.devices)) {
             const instance = new WeatherStation(this, device);
-            if(device.modules && device.modules.length) {
-                for(const d of device.modules) {
-                    this.addDevice(d);
-                }
+        }
+        if(device.modules && device.modules.length) {
+            for(const d of device.modules) {
+                this.addDevice(d);
             }
         }
     }
@@ -142,7 +144,15 @@ class NetatmoWeatherAdapter extends Adapter {
             device_id: device.id
         }, (err, data) => {
             if(!err) {
-                device.updateProperties(data[0]);
+                const station = data[0];
+                device.updateProperties(station);
+                if(station.modules && station.modules.length) {
+                    for(const module of station.modules) {
+                        if(module._id in this.devices) {
+                            this.getDevice(module._id).updateProperties(module);
+                        }
+                    }
+                }
             }
             else {
                 console.error(err);
