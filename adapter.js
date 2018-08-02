@@ -48,7 +48,8 @@ const STATION_TYPE = {
     NAModule1: "Netatmo Outdoor module",
     NAModule2: "Netatmo Rain gauge",
     NAModule3: "Netatmo Wind gauge",
-    NAModule4: "Netatmo Indoor module"
+    NAModule4: "Netatmo Indoor module",
+    NHC: "Netatmo Health Coach"
 };
 
 class WeatherStation extends Device {
@@ -57,9 +58,10 @@ class WeatherStation extends Device {
         this.name = netatmoDevice.module_name;
         this.description = STATION_TYPE[netatmoDevice.type];
         this.uiHref = "https://my.netatmo.com/app/station";
-        this.canUpdate = netatmoDevice.type == 'NAMain';
+        this.canUpdate = netatmoDevice.type == this.updatableType;
         this.parent = parent;
         this.pollingFor = new Set();
+        //this["@type"] = [ "MultiLevelSensor" ];
 
         if(this.canUpdate && this.parent) {
             console.warn("Device can both update itself and has a parent.");
@@ -67,19 +69,29 @@ class WeatherStation extends Device {
 
         for(const dataType of netatmoDevice.data_type) {
             this.properties.set(dataType, new NetatmoProperty(this, dataType, {
+                label: dataType,
                 type: "number",
-                unit: UNITS[dataType]
+                unit: UNITS[dataType],
+                //"@type": CAPABILITES[dataType],
+                writable: false
             }, netatmoDevice.dashboard_data[dataType]));
         }
 
         if(netatmoDevice.battery_percent) {
             this.properties.set('battery', new NetatmoProperty(this, 'battery', {
+                label: "Battery",
                 type: "number",
-                unit: "percent"
+                unit: "percent",
+                "@type": "LevelProperty",
+                writable: false
             }, netatmoDevice.battery_percent));
         }
 
         this.adapter.handleDeviceAdded(this);
+    }
+
+    get updatableType() {
+        return 'NAMain';
     }
 
     updateProp(propertyName, value) {
@@ -128,6 +140,12 @@ class WeatherStation extends Device {
     }
 }
 
+class HealthCoach extends WeatherStation {
+    get updatableType() {
+        return 'NHC';
+    }
+}
+
 class NetatmoWeatherAdapter extends Adapter {
     constructor(addonManager, packageName, config) {
         super(addonManager, 'NetatmoWeatherAdapter', packageName);
@@ -141,7 +159,12 @@ class NetatmoWeatherAdapter extends Adapter {
     addDevice(device, parent) {
         let instance;
         if(!(device._id in this.devices)) {
-            instance = new WeatherStation(this, device, parent);
+            if(device.type === 'NHC') {
+                insance = new HealthCoach(this, device, parent);
+            }
+            else {
+                instance = new WeatherStation(this, device, parent);
+            }
         }
         else {
             instance = this.getDevice(device._id);
@@ -165,28 +188,53 @@ class NetatmoWeatherAdapter extends Adapter {
     }
 
     async updateDevice(device) {
-        this.netatmo.getStationsData({
-            device_id: device.id
-        }, (err, data) => {
-            if(!err) {
-                const station = data[0];
-                device.updateProperties(station);
-                if(station.modules && station.modules.length) {
-                    for(const module of station.modules) {
-                        if(module._id in this.devices) {
-                            this.getDevice(module._id).updateProperties(module);
+        if(device instanceof HealthCoach) {
+            this.netatmo.getHealthyHomeCoachData({
+                device_id: device.id
+            }, (err, data) => {
+                if(!err) {
+                    const coach = data[0];
+                    device.updateProperties(coach);
+                }
+                else {
+                    console.error(err);
+                }
+            });
+        }
+        else {
+            this.netatmo.getStationsData({
+                device_id: device.id
+            }, (err, data) => {
+                if(!err) {
+                    const station = data[0];
+                    device.updateProperties(station);
+                    if(station.modules && station.modules.length) {
+                        for(const module of station.modules) {
+                            if(module._id in this.devices) {
+                                this.getDevice(module._id).updateProperties(module);
+                            }
                         }
                     }
+                }
+                else {
+                    console.error(err);
+                }
+            });
+        }
+    }
+
+    startPairing() {
+        this.netatmo.getStationsData((err, devices) => {
+            if(!err) {
+                for(const device of devices) {
+                    this.addDevice(device);
                 }
             }
             else {
                 console.error(err);
             }
         });
-    }
-
-    startPairing() {
-        this.netatmo.getStationsData((err, devices) => {
+        this.netatmo.getHealthyHomeCoachData((err, devices) => {
             if(!err) {
                 for(const device of devices) {
                     this.addDevice(device);
