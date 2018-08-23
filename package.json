@@ -41,22 +41,23 @@
     "exec": "{nodeLoader} {path}",
     "schema": {
       "type": "object",
+      "title": "Login to your Netatmo Smart Home",
       "properties": {
         "client_id": {
           "type": "string",
-          "description": "Netatmo API Client ID"
+          "title": "API Client ID"
         },
         "client_secret": {
           "type": "string",
-          "description": "Netatmo API Client Secret"
+          "title": "API Client Secret"
         },
         "username": {
           "type": "string",
-          "description": "Netatmo Username"
+          "title": "Username"
         },
         "password": {
           "type": "string",
-          "description": "Netatmo Password"
+          "title": "Password"
         }
       }
     }
