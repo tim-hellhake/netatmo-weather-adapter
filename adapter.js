@@ -21,6 +21,7 @@ catch (e) {
 
 class NetatmoProperty extends Property {
     constructor(device, name, description, value) {
+        description.readOnly = true;
         super(device, name, description);
         this.setCachedValue(value);
     }
@@ -72,8 +73,7 @@ class WeatherStation extends Device {
                 label: dataType,
                 type: "number",
                 unit: UNITS[dataType],
-                //"@type": CAPABILITES[dataType],
-                writable: false
+                //"@type": CAPABILITES[dataType]
             }, netatmoDevice.dashboard_data[dataType]));
         }
 
@@ -82,8 +82,7 @@ class WeatherStation extends Device {
                 label: "Battery",
                 type: "number",
                 unit: "percent",
-                "@type": "LevelProperty",
-                writable: false
+                "@type": "LevelProperty"
             }, netatmoDevice.battery_percent));
         }
 
