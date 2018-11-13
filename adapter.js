@@ -32,7 +32,7 @@ class NetatmoProperty extends Property {
 }
 
 const UNITS = {
-    Temperature: "celsius",
+    Temperature: "degree celsius",
     Humidity: "percent",
     Pressure: "mbar",
     Noise: "dB",
