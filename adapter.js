@@ -44,6 +44,14 @@ const UNITS = {
     GustAngle: "°"
 };
 
+const CAPABILITES = {
+    Temperature: "TemperatureProperty"
+};
+
+const DEVICE_CAPS = {
+    Temperature: "TemperatureSensor"
+};
+
 const STATION_TYPE = {
     NAMain: "Netatmo Weather Station",
     NAModule1: "Netatmo Outdoor module",
@@ -62,19 +70,25 @@ class WeatherStation extends Device {
         this.canUpdate = netatmoDevice.type == this.updatableType;
         this.parent = parent;
         this.pollingFor = new Set();
-        //this["@type"] = [ "MultiLevelSensor" ];
+        this["@type"] = [];
 
         if(this.canUpdate && this.parent) {
             console.warn("Device can both update itself and has a parent.");
         }
 
         for(const dataType of netatmoDevice.data_type) {
-            this.properties.set(dataType, new NetatmoProperty(this, dataType, {
+            const props = {
                 label: dataType,
                 type: "number",
-                unit: UNITS[dataType],
-                //"@type": CAPABILITES[dataType]
-            }, netatmoDevice.dashboard_data[dataType]));
+                unit: UNITS[dataType]
+            };
+            if(CAPABILITES.hasOwnProperty(dataType)) {
+                props["@type"] = CAPABILITES[dataType];
+            }
+            if(DEVICE_CAPS.hasOwnProperty(dataType) && !this['@type'].includes(DEVICE_CAPS[dataType])) {
+                this['@type'].push(DEVICE_CAPS[dataType]);
+            }
+            this.properties.set(dataType, new NetatmoProperty(this, dataType, props, netatmoDevice.dashboard_data[dataType]));
         }
 
         if(netatmoDevice.battery_percent) {
