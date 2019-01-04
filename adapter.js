@@ -44,6 +44,19 @@ const UNITS = {
     GustAngle: "°"
 };
 
+const MIN = {
+    Temperature: -273.15,
+    Rain: 0,
+    CO2: 0,
+    WindAngle: -360,
+    GustAngle: -360
+};
+
+const MAX = {
+    WindAngle: 360,
+    GustAngle: 360
+};
+
 const CAPABILITES = {
     Temperature: "TemperatureProperty"
 };
@@ -54,10 +67,10 @@ const DEVICE_CAPS = {
 
 const STATION_TYPE = {
     NAMain: "Netatmo Weather Station",
-    NAModule1: "Netatmo Outdoor module",
-    NAModule2: "Netatmo Rain gauge",
-    NAModule3: "Netatmo Wind gauge",
-    NAModule4: "Netatmo Indoor module",
+    NAModule1: "Netatmo Outdoor Module",
+    NAModule2: "Netatmo Rain Gauge",
+    NAModule3: "Netatmo Wind Gauge",
+    NAModule4: "Netatmo Indoor Module",
     NHC: "Netatmo Health Coach"
 };
 
@@ -87,6 +100,12 @@ class WeatherStation extends Device {
             }
             if(DEVICE_CAPS.hasOwnProperty(dataType) && !this['@type'].includes(DEVICE_CAPS[dataType])) {
                 this['@type'].push(DEVICE_CAPS[dataType]);
+            }
+            if(MIN.hasOwnProperty(dataType)) {
+                props['minimum'] = MIN[dataType];
+            }
+            if(MAX.hasOwnProperty(dataType)) {
+                props['maximum'] = MAX[dataType];
             }
             this.properties.set(dataType, new NetatmoProperty(this, dataType, props, netatmoDevice.dashboard_data[dataType]));
         }
