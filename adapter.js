@@ -79,7 +79,13 @@ class WeatherStation extends Device {
         super(adapter, netatmoDevice._id);
         this.name = netatmoDevice.module_name;
         this.description = STATION_TYPE[netatmoDevice.type];
-        this.uiHref = "https://my.netatmo.com/app/station";
+        this.links = [
+            {
+                rel: 'alternate',
+                mediaType: 'text/html',
+                href: 'https://my.netatmo.com/app/station',
+            }
+        ];
         this.canUpdate = netatmoDevice.type == this.updatableType;
         this.parent = parent;
         this.pollingFor = new Set();
@@ -91,7 +97,7 @@ class WeatherStation extends Device {
 
         for(const dataType of netatmoDevice.data_type) {
             const props = {
-                label: dataType,
+                title: dataType,
                 type: "number",
                 unit: UNITS[dataType]
             };
@@ -112,7 +118,7 @@ class WeatherStation extends Device {
 
         if(netatmoDevice.battery_percent) {
             this.properties.set('battery', new NetatmoProperty(this, 'battery', {
-                label: "Battery",
+                title: "Battery",
                 type: "number",
                 unit: "percent",
                 "@type": "LevelProperty"
