@@ -44,15 +44,24 @@ const UNITS = {
     GustAngle: "°"
 };
 
+// Min and max are based on official sensor ranges and valid values for the unit.
+// https://www.netatmo.com/en-us/weather/weatherstation/specifications
+// https://www.netatmo.com/en-us/aircare/homecoach/specifications
 const MIN = {
-    Temperature: -273.15,
-    Rain: 0,
+    Temperature: -40,
+    Pressure: 260,
+    Noise: 35,
     CO2: 0,
+    Rain: 0,
     WindAngle: -360,
     GustAngle: -360
 };
 
 const MAX = {
+    Temperature: 65,
+    Pressure: 1260,
+    Noise: 120,
+    CO2: 5000,
     WindAngle: 360,
     GustAngle: 360
 };
@@ -63,6 +72,20 @@ const CAPABILITES = {
 
 const DEVICE_CAPS = {
     Temperature: "TemperatureSensor"
+};
+
+const INTEGERS = [
+    "Humidity",
+    "Noise",
+    "CO2"
+];
+
+const NICE_LABEL = {
+    CO2: "CO₂",
+    WindStrength: "Wind strength",
+    Guststrength: "Gust strength",
+    WindAngle: "Wind angle",
+    GustAngle: "Gust angle"
 };
 
 const STATION_TYPE = {
@@ -97,8 +120,8 @@ class WeatherStation extends Device {
 
         for(const dataType of netatmoDevice.data_type) {
             const props = {
-                title: dataType,
-                type: "number",
+                title: NICE_LABEL.hasOwnProperty(dataType) ? NICE_LABEL[dataType] : dataType,
+                type: INTEGERS.includes(dataType) ? "integer" : "number",
                 unit: UNITS[dataType]
             };
             if(CAPABILITES.hasOwnProperty(dataType)) {
