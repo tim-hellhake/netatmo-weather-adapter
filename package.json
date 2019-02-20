@@ -64,7 +64,7 @@
     }
   },
   "dependencies": {
-    "netatmo": "^2.2.1"
+    "netatmo": "^2.2.2"
   },
   "devDependencies": {
     "nlf": "^2.0.1"

@@ -208,11 +208,19 @@ class HealthCoach extends WeatherStation {
 }
 
 class NetatmoWeatherAdapter extends Adapter {
-    constructor(addonManager, packageName, config) {
+    constructor(addonManager, packageName, config, reportError) {
         super(addonManager, 'NetatmoWeatherAdapter', packageName);
         addonManager.addAdapter(this);
 
-        this.netatmo = new Netatmo(config);
+        try {
+            this.netatmo = new Netatmo(config);
+        }
+        catch(e) {
+            console.warn(e);
+            this.netatmo = undefined;
+            reportError(packageName, "Netatmo API credentials are not valid. Please provide credentials in the add-on settings.");
+            return;
+        }
 
         this.startPairing();
     }
@@ -292,6 +300,7 @@ class NetatmoWeatherAdapter extends Adapter {
                 }
             }
             else {
+                // this.sendPairingPrompt("Could not fetch station data. Ensure the provided credentials are valid.");
                 console.error(err);
             }
         });
@@ -302,6 +311,7 @@ class NetatmoWeatherAdapter extends Adapter {
                 }
             }
             else {
+                // this.sendPairingPrompt("Could not fetch healthy home coach data. Ensure the provided credentials are valid.");
                 console.error(err);
             }
         });
@@ -316,15 +326,11 @@ class NetatmoWeatherAdapter extends Adapter {
         return super.unload();
     }
 
-    removeThing(device) {
-        device.stopPolling();
-    }
-
     cancelRemoveThing(device) {
         device.startPolling();
     }
 }
 
-module.exports = (addonManager, manifest) => {
-    const adapter = new NetatmoWeatherAdapter(addonManager, manifest.name, manifest.moziot.config)
+module.exports = (addonManager, manifest, reportError) => {
+    const adapter = new NetatmoWeatherAdapter(addonManager, manifest.name, manifest.moziot.config, reportError);
 };
