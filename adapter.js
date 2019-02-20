@@ -210,7 +210,6 @@ class HealthCoach extends WeatherStation {
 class NetatmoWeatherAdapter extends Adapter {
     constructor(addonManager, packageName, config, reportError) {
         super(addonManager, 'NetatmoWeatherAdapter', packageName);
-        addonManager.addAdapter(this);
 
         try {
             this.netatmo = new Netatmo(config);
@@ -222,6 +221,7 @@ class NetatmoWeatherAdapter extends Adapter {
             return;
         }
 
+        addonManager.addAdapter(this);
         this.startPairing();
     }
 
