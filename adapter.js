@@ -85,7 +85,8 @@ const NICE_LABEL = {
     WindStrength: "Wind strength",
     Guststrength: "Gust strength",
     WindAngle: "Wind angle",
-    GustAngle: "Gust angle"
+    GustAngle: "Gust angle",
+    health_idx: "Health index"
 };
 
 const STATION_TYPE = {
@@ -97,11 +98,19 @@ const STATION_TYPE = {
     NHC: "Netatmo Health Coach"
 };
 
+const HEALTH_IDX_MAP = [
+    'Healthy',
+    'Fine',
+    'Fair',
+    'Poor',
+    'Unhealthy'
+];
+
 class WeatherStation extends Device {
     constructor(adapter, netatmoDevice, parent) {
         super(adapter, netatmoDevice._id);
-        this.name = netatmoDevice.module_name;
-        this.description = STATION_TYPE[netatmoDevice.type];
+        this.name = netatmoDevice.module_name || netatmoDevice.station_name || netatmoDevice.name;
+        this.description = STATION_TYPE[netatmoDevice.type] + ' for ' + (netatmoDevice.station_name || netatmoDevice.name);
         this.links = [
             {
                 rel: 'alternate',
@@ -121,9 +130,11 @@ class WeatherStation extends Device {
         for(const dataType of netatmoDevice.data_type) {
             const props = {
                 title: NICE_LABEL.hasOwnProperty(dataType) ? NICE_LABEL[dataType] : dataType,
-                type: INTEGERS.includes(dataType) ? "integer" : "number",
-                unit: UNITS[dataType]
+                type: INTEGERS.includes(dataType) ? "integer" : "number"
             };
+            if(UNITS.hasOwnProperty(dataType)) {
+                props.unit = UNITS[dataType];
+            }
             if(CAPABILITES.hasOwnProperty(dataType)) {
                 props["@type"] = CAPABILITES[dataType];
             }
@@ -131,12 +142,22 @@ class WeatherStation extends Device {
                 this['@type'].push(DEVICE_CAPS[dataType]);
             }
             if(MIN.hasOwnProperty(dataType)) {
-                props['minimum'] = MIN[dataType];
+                props.minimum = MIN[dataType];
             }
             if(MAX.hasOwnProperty(dataType)) {
-                props['maximum'] = MAX[dataType];
+                props.maximum = MAX[dataType];
             }
-            const value = netatmoDevice.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
+            let value = netatmoDevice.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
+            if(dataType == 'health_idx') {
+                props.type = 'string';
+                props.enum = HEALTH_IDX_MAP;
+                if(isNaN(value)) {
+                    value = '';
+                }
+                else {
+                    value = HEALTH_IDX_MAP[value];
+                }
+            }
             this.properties.set(dataType, new NetatmoProperty(this, dataType, props, value));
         }
 
@@ -149,7 +170,49 @@ class WeatherStation extends Device {
             }, netatmoDevice.battery_percent));
         }
 
+        if(netatmoDevice.wifi_status) {
+            this.properties.set('signal', new NetatmoProperty(this, 'signal', {
+                title: 'Signal strength',
+                type: 'number',
+                unit: 'percent',
+                '@type': 'LevelProperty'
+            }, WeatherStation.mapWifiToPercent(netatmoDevice.wifi_status)));
+        }
+        else if(netatmoDevice.rf_status) {
+            this.properties.set('signal', new NetatmoProperty(this, 'signal', {
+                title: 'Signal strength',
+                type: 'number',
+                unit: 'percent',
+                '@type': 'LevelProperty'
+            }, WeatherStation.mapRfToPercent(netatmoDevice.rf_status)));
+        }
+
+        if(netatmoDevice.hasOwnProperty('co2_calibrating')) {
+            this.properties.set('calibrating', new NetatmoProperty(this, 'calibrating', {
+                title: 'Calibrating CO₂',
+                type: 'boolean'
+            }, netatmoDevice.co2_calibrating));
+        }
+
         this.adapter.handleDeviceAdded(this);
+    }
+
+    static clamp(num, max = 100, min = 0) {
+        return Math.max(Math.min(num, max), min);
+    }
+
+    // Netatmo documents the expected good to bad ranges to be 30 units. However the strength
+    // can be reported as better than good, thus the value needs to be clamped.
+    static mapSignalToPercent(signal, min, range = 30) {
+        return WeatherStation.clamp(((min - signal) / range) * 90 + 10);
+    }
+
+    static mapWifiToPercent(wifi) {
+        return WeatherStation.mapSignalToPercent(wifi, 86);
+    }
+
+    static mapRfToPercent(rf) {
+        return WeatherStation.mapSignalToPercent(rf, 90);
     }
 
     get updatableType() {
@@ -167,12 +230,28 @@ class WeatherStation extends Device {
     updateProperties(netatmoDevice) {
         for(const dataType of netatmoDevice.data_type) {
             if(netatmoDevice.dashboard_data.hasOwnProperty(dataType)) {
-                this.updateProp(dataType, netatmoDevice.dashboard_data[dataType]);
+                if(dataType === 'health_idx') {
+                    this.updateProp(dataType, HEALTH_IDX_MAP[netatmoDevice.dashboard_data[dataType]]);
+                }
+                else {
+                    this.updateProp(dataType, netatmoDevice.dashboard_data[dataType]);
+                }
             }
         }
 
         if(netatmoDevice.battery_percent) {
             this.updateProp('battery', netatmoDevice.battery_percent);
+        }
+
+        if(netatmoDevice.wifi_status) {
+            this.updateProp('signal', WeatherStation.mapWifiToPercent(netatmoDevice.wifi_status));
+        }
+        else if(netatmoDevice.rf_status) {
+            this.updateProp('signal', WeatherStation.mapRfToPercent(netatmoDevice.rf_status));
+        }
+
+        if(netatmoDevice.hasOwnProperty('co2_calibrating')) {
+            this.updateProp('calibrating', netatmoDevice.co2_calibrating);
         }
     }
 
