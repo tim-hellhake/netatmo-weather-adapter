@@ -136,7 +136,8 @@ class WeatherStation extends Device {
             if(MAX.hasOwnProperty(dataType)) {
                 props['maximum'] = MAX[dataType];
             }
-            this.properties.set(dataType, new NetatmoProperty(this, dataType, props, netatmoDevice.dashboard_data[dataType]));
+            const value = netatmoDevice.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
+            this.properties.set(dataType, new NetatmoProperty(this, dataType, props, value));
         }
 
         if(netatmoDevice.battery_percent) {
@@ -165,7 +166,9 @@ class WeatherStation extends Device {
 
     updateProperties(netatmoDevice) {
         for(const dataType of netatmoDevice.data_type) {
-            this.updateProp(dataType, netatmoDevice.dashboard_data[dataType]);
+            if(netatmoDevice.dashboard_data.hasOwnProperty(dataType)) {
+                this.updateProp(dataType, netatmoDevice.dashboard_data[dataType]);
+            }
         }
 
         if(netatmoDevice.battery_percent) {
