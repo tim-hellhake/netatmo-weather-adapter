@@ -11,3 +11,7 @@ Normally you will just want to install this from the add-ons list provided by th
 2. [Create a Netatmo app](https://dev.netatmo.com/myaccount/createanapp). After entering and saving information for the new app, copy the API Client ID and Client Secret.
 3. Enter the credentials that you have collected in the last steps in the Netatmo Weather Station add-on configuration (Settings → Add-ons → Netatmo Weather Station → [Configure](http://gateway.local/settings/addons/config/netatmo-weather-adapter)).
 4. You should now see all the Netatmo Weather Stations and Healthy Home Coaches connected to the configured credentials in the device pairing screen.
+
+# Credits
+
+This add-on was originally created by Martin Giger (@freaktechnik).

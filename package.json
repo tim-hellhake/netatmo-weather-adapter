@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/freaktechnik/netatmo-weather-adapter.git"
+    "url": "git+https://github.com/tim-hellhake/netatmo-weather-adapter.git"
   },
   "keywords": [
     "adapter",
@@ -22,12 +22,12 @@
     "netatmo",
     "weather"
   ],
-  "author": "Martin Giger",
+  "author": "Tim Hellhake",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/freaktechnik/netatmo-weather-adapter/issues"
+    "url": "https://github.com/tim-hellhake/netatmo-weather-adapter/issues"
   },
-  "homepage": "https://github.com/freaktechnik/netatmo-weather-adapter#readme",
+  "homepage": "https://github.com/tim-hellhake/netatmo-weather-adapter#readme",
   "files": [
     "adapter.js",
     "LICENSE",
@@ -35,7 +35,7 @@
   ],
   "moziot": {
     "api": {
-      "min": 1,
+      "min": 2,
       "max": 2
     },
     "plugin": true,
@@ -64,9 +64,9 @@
     }
   },
   "dependencies": {
-    "netatmo": "^2.2.2"
+    "netatmo": "^2.3.0"
   },
   "devDependencies": {
-    "nlf": "^2.0.1"
+    "nlf": "^2.1.1"
   }
 }
