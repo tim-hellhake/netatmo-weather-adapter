@@ -1,0 +1,43 @@
+{
+  "manifest_version": 1,
+  "id": "netatmo-weather-adapter",
+  "name": "Netatmo Weather Station",
+  "short_name": "Netatmo",
+  "version": "0.3.3",
+  "description": "WoT adapter for netatmo weather stations",
+  "homepage_url": "https://github.com/tim-hellhake/netatmo-weather-adapter#readme",
+  "license": "MIT",
+  "author": "Tim Hellhake",
+  "gateway_specific_settings": {
+    "webthings": {
+      "exec": "{nodeLoader} {path}",
+      "strict_min_version": "0.10.0",
+      "strict_max_version": "*",
+      "primary_type": "adapter"
+    }
+  },
+  "options": {
+    "schema": {
+      "type": "object",
+      "title": "Login to your Netatmo Smart Home",
+      "properties": {
+        "client_id": {
+          "type": "string",
+          "title": "API Client ID"
+        },
+        "client_secret": {
+          "type": "string",
+          "title": "API Client Secret"
+        },
+        "username": {
+          "type": "string",
+          "title": "Username"
+        },
+        "password": {
+          "type": "string",
+          "title": "Password"
+        }
+      }
+    }
+  }
+}

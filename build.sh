@@ -8,7 +8,7 @@ npm run licenses
 cd package
 sha256sum LICENSE > SHA256SUMS
 cd ..
-sha256sum package.json adapter.js >> package/SHA256SUMS
+sha256sum package.json manifest.json adapter.js >> package/SHA256SUMS
 rm -rf node_modules
 npm ci --production
 find node_modules -type f -exec sha256sum {} \; >> package/SHA256SUMS

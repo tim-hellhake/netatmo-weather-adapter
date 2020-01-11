@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/tim-hellhake/netatmo-weather-adapter#readme",
   "files": [
+    "manifest.json",
     "adapter.js",
     "LICENSE",
     "SHA256SUMS"
