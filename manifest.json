@@ -3,7 +3,7 @@
   "id": "netatmo-weather-adapter",
   "name": "Netatmo Weather Station",
   "short_name": "Netatmo",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "WoT adapter for netatmo weather stations",
   "homepage_url": "https://github.com/tim-hellhake/netatmo-weather-adapter#readme",
   "license": "MIT",
