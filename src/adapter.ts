@@ -1,26 +1,27 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
+ */
+
 "use strict";
 
-const Netatmo = require("netatmo");
-
-const {
-    Adapter,
-    Device,
-    Property,
-} = require('gateway-addon');
+import { Adapter, Device, Property } from 'gateway-addon';
+import Netatmo from 'netatmo';
 
 class NetatmoProperty extends Property {
-    constructor(device, name, description, value) {
+    constructor(device: Device, name: string, description: any, value: any) {
         description.readOnly = true;
         super(device, name, description);
         this.setCachedValue(value);
     }
 
-    async setValue(value) {
+    async setValue(_value: any) {
         return Promise.reject("Read-only property");
     }
 }
 
-const UNITS = {
+const UNITS: { [key: string]: string } = {
     Temperature: "degree celsius",
     Humidity: "percent",
     Pressure: "mbar",
@@ -36,7 +37,7 @@ const UNITS = {
 // Min and max are based on official sensor ranges and valid values for the unit.
 // https://www.netatmo.com/en-us/weather/weatherstation/specifications
 // https://www.netatmo.com/en-us/aircare/homecoach/specifications
-const MIN = {
+const MIN: { [key: string]: number } = {
     Temperature: -40,
     Pressure: 260,
     Noise: 35,
@@ -46,7 +47,7 @@ const MIN = {
     GustAngle: -360
 };
 
-const MAX = {
+const MAX: { [key: string]: number } = {
     Temperature: 65,
     Pressure: 1260,
     Noise: 120,
@@ -55,11 +56,11 @@ const MAX = {
     GustAngle: 360
 };
 
-const CAPABILITES = {
+const CAPABILITES: { [key: string]: string } = {
     Temperature: "TemperatureProperty"
 };
 
-const DEVICE_CAPS = {
+const DEVICE_CAPS: { [key: string]: string } = {
     Temperature: "TemperatureSensor"
 };
 
@@ -69,7 +70,7 @@ const INTEGERS = [
     "CO2"
 ];
 
-const NICE_LABEL = {
+const NICE_LABEL: { [key: string]: string } = {
     CO2: "CO₂",
     WindStrength: "Wind strength",
     Guststrength: "Gust strength",
@@ -78,7 +79,7 @@ const NICE_LABEL = {
     health_idx: "Health index"
 };
 
-const STATION_TYPE = {
+const STATION_TYPE: { [key: string]: string } = {
     NAMain: "Netatmo Weather Station",
     NAModule1: "Netatmo Outdoor Module",
     NAModule2: "Netatmo Rain Gauge",
@@ -96,7 +97,11 @@ const HEALTH_IDX_MAP = [
 ];
 
 class WeatherStation extends Device {
-    constructor(adapter, netatmoDevice, parent) {
+    private canUpdate: boolean;
+    private pollingFor: Set<unknown>;
+    private iid?: NodeJS.Timeout;
+
+    constructor(adapter: Adapter, netatmoDevice: any, private parent: any) {
         super(adapter, netatmoDevice._id);
         this.name = netatmoDevice.module_name || netatmoDevice.station_name || netatmoDevice.name;
         this.description = STATION_TYPE[netatmoDevice.type] + ' for ' + (netatmoDevice.station_name || netatmoDevice.name);
@@ -117,7 +122,7 @@ class WeatherStation extends Device {
         }
 
         for(const dataType of netatmoDevice.data_type) {
-            const props = {
+            const props: any = {
                 title: NICE_LABEL.hasOwnProperty(dataType) ? NICE_LABEL[dataType] : dataType,
                 type: INTEGERS.includes(dataType) ? "integer" : "number"
             };
@@ -186,21 +191,21 @@ class WeatherStation extends Device {
         this.adapter.handleDeviceAdded(this);
     }
 
-    static clamp(num, max = 100, min = 0) {
+    static clamp(num: number, max: number = 100, min: number = 0) {
         return Math.max(Math.min(num, max), min);
     }
 
     // Netatmo documents the expected good to bad ranges to be 30 units. However the strength
     // can be reported as better than good, thus the value needs to be clamped.
-    static mapSignalToPercent(signal, min, range = 30) {
+    static mapSignalToPercent(signal: number, min: number, range: number = 30) {
         return WeatherStation.clamp(((min - signal) / range) * 90 + 10);
     }
 
-    static mapWifiToPercent(wifi) {
+    static mapWifiToPercent(wifi: number) {
         return WeatherStation.mapSignalToPercent(wifi, 86);
     }
 
-    static mapRfToPercent(rf) {
+    static mapRfToPercent(rf: number) {
         return WeatherStation.mapSignalToPercent(rf, 90);
     }
 
@@ -208,7 +213,7 @@ class WeatherStation extends Device {
         return 'NAMain';
     }
 
-    updateProp(propertyName, value) {
+    updateProp(propertyName: string, value: any) {
         const property = this.findProperty(propertyName);
         if(property.value != value) {
             property.setCachedValue(value);
@@ -216,7 +221,7 @@ class WeatherStation extends Device {
         }
     }
 
-    updateProperties(netatmoDevice) {
+    updateProperties(netatmoDevice: any) {
         for(const dataType of netatmoDevice.data_type) {
             if(netatmoDevice.dashboard_data.hasOwnProperty(dataType)) {
                 if(dataType === 'health_idx') {
@@ -278,8 +283,10 @@ class HealthCoach extends WeatherStation {
     }
 }
 
-class NetatmoWeatherAdapter extends Adapter {
-    constructor(addonManager, packageName, config, reportError) {
+export class NetatmoWeatherAdapter extends Adapter {
+    private netatmo?: Netatmo;
+
+    constructor(addonManager: any, packageName: string, config: any, reportError: any) {
         super(addonManager, 'NetatmoWeatherAdapter', packageName);
 
         try {
@@ -296,11 +303,11 @@ class NetatmoWeatherAdapter extends Adapter {
         this.startPairing();
     }
 
-    addDevice(device, parent) {
+    addDevice(device: any, parent?: any) {
         let instance;
         if(!(device._id in this.devices)) {
             if(device.type === 'NHC') {
-                insance = new HealthCoach(this, device, parent);
+                instance = new HealthCoach(this, device, parent);
             }
             else {
                 instance = new WeatherStation(this, device, parent);
@@ -317,19 +324,19 @@ class NetatmoWeatherAdapter extends Adapter {
         }
     }
 
-    handleDeviceAdded(device) {
+    handleDeviceAdded(device: WeatherStation | HealthCoach) {
         device.startPolling();
         super.handleDeviceAdded(device);
     }
 
-    handleDeviceRemoved(device) {
+    handleDeviceRemoved(device: WeatherStation | HealthCoach) {
         device.stopPolling();
         super.handleDeviceRemoved(device);
     }
 
-    async updateDevice(device) {
+    async updateDevice(device: WeatherStation | HealthCoach) {
         if(device instanceof HealthCoach) {
-            this.netatmo.getHealthyHomeCoachData({
+            this.netatmo?.getHealthyHomeCoachData({
                 device_id: device.id
             }, (err, data) => {
                 if(!err) {
@@ -342,7 +349,7 @@ class NetatmoWeatherAdapter extends Adapter {
             });
         }
         else {
-            this.netatmo.getStationsData({
+            this.netatmo?.getStationsData({
                 device_id: device.id
             }, (err, data) => {
                 if(!err) {
@@ -364,7 +371,7 @@ class NetatmoWeatherAdapter extends Adapter {
     }
 
     startPairing() {
-        this.netatmo.getStationsData((err, devices) => {
+        this.netatmo?.getStationsData((err: any, devices: any) => {
             if(!err) {
                 for(const device of devices) {
                     this.addDevice(device);
@@ -375,7 +382,7 @@ class NetatmoWeatherAdapter extends Adapter {
                 console.error(err);
             }
         });
-        this.netatmo.getHealthyHomeCoachData((err, devices) => {
+        this.netatmo?.getHealthyHomeCoachData((err: any, devices: any) => {
             if(!err) {
                 for(const device of devices) {
                     this.addDevice(device);
@@ -397,11 +404,7 @@ class NetatmoWeatherAdapter extends Adapter {
         return super.unload();
     }
 
-    cancelRemoveThing(device) {
+    cancelRemoveThing(device: WeatherStation | HealthCoach) {
         device.startPolling();
     }
 }
-
-module.exports = (addonManager, manifest, reportError) => {
-    const adapter = new NetatmoWeatherAdapter(addonManager, manifest.name, manifest.moziot.config, reportError);
-};

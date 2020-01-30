@@ -3,11 +3,11 @@
   "display_name": "Netatmo Weather Station",
   "version": "0.3.6",
   "description": "WoT adapter for netatmo weather stations",
-  "main": "adapter.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "licenses": "./gather-licenses.js",
-    "build": "./build.sh"
+    "build": "tsc -p ."
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,8 @@
   "homepage": "https://github.com/tim-hellhake/netatmo-weather-adapter#readme",
   "files": [
     "manifest.json",
-    "adapter.js",
+    "lib/index.js",
+    "lib/adapter.js",
     "LICENSE",
     "SHA256SUMS"
   ],
@@ -68,6 +69,8 @@
     "netatmo": "^2.3.0"
   },
   "devDependencies": {
-    "nlf": "^2.1.1"
+    "@types/node": "^13.1.8",
+    "nlf": "^2.1.1",
+    "typescript": "^3.7.5"
   }
 }
