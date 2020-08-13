@@ -35,36 +35,6 @@
     "LICENSE",
     "SHA256SUMS"
   ],
-  "moziot": {
-    "api": {
-      "min": 2,
-      "max": 2
-    },
-    "plugin": true,
-    "exec": "{nodeLoader} {path}",
-    "schema": {
-      "type": "object",
-      "title": "Login to your Netatmo Smart Home",
-      "properties": {
-        "client_id": {
-          "type": "string",
-          "title": "API Client ID"
-        },
-        "client_secret": {
-          "type": "string",
-          "title": "API Client Secret"
-        },
-        "username": {
-          "type": "string",
-          "title": "Username"
-        },
-        "password": {
-          "type": "string",
-          "title": "Password"
-        }
-      }
-    }
-  },
   "dependencies": {
     "netatmo": "^2.3.0"
   },
