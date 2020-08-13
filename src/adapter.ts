@@ -57,11 +57,13 @@ const MAX: { [key: string]: number } = {
 };
 
 const CAPABILITES: { [key: string]: string } = {
-    Temperature: "TemperatureProperty"
+    Temperature: "TemperatureProperty",
+    Humidity: "HumidityProperty"
 };
 
 const DEVICE_CAPS: { [key: string]: string } = {
-    Temperature: "TemperatureSensor"
+    Temperature: "TemperatureSensor",
+    Humidity: "HumiditySensor"
 };
 
 const INTEGERS = [
