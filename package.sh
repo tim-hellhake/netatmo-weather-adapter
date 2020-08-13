@@ -2,10 +2,9 @@
 
 rm -rf node_modules
 npm ci --production
-rm -rf node_modules/.bin
 
 shasum --algorithm 256 package.json manifest.json lib/*.js LICENSE README.md > SHA256SUMS
-find node_modules -type f -exec shasum --algorithm 256 {} \; >> SHA256SUMS
+find node_modules \( -type f -o -type l \) -exec shasum --algorithm 256 {} \; >> SHA256SUMS
 
 TARFILE=`npm pack`
 tar xzf ${TARFILE}
