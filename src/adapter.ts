@@ -58,12 +58,14 @@ const MAX: { [key: string]: number } = {
 
 const CAPABILITES: { [key: string]: string } = {
     Temperature: "TemperatureProperty",
-    Humidity: "HumidityProperty"
+    Humidity: "HumidityProperty",
+    Pressure: "BarometricPressureProperty",
 };
 
 const DEVICE_CAPS: { [key: string]: string } = {
     Temperature: "TemperatureSensor",
-    Humidity: "HumiditySensor"
+    Humidity: "HumiditySensor",
+    Pressure: "BarometricPressureSensor"
 };
 
 const INTEGERS = [
