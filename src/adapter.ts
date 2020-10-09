@@ -60,12 +60,14 @@ const CAPABILITES: { [key: string]: string } = {
     Temperature: "TemperatureProperty",
     Humidity: "HumidityProperty",
     Pressure: "BarometricPressureProperty",
+    CO2: "ConcentrationProperty"
 };
 
 const DEVICE_CAPS: { [key: string]: string } = {
     Temperature: "TemperatureSensor",
     Humidity: "HumiditySensor",
-    Pressure: "BarometricPressureSensor"
+    Pressure: "BarometricPressureSensor",
+    CO2: "AirQualitySensor"
 };
 
 const INTEGERS = [
