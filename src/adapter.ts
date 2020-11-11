@@ -147,7 +147,7 @@ class WeatherStation extends Device {
             if(MAX.hasOwnProperty(dataType)) {
                 props.maximum = MAX[dataType];
             }
-            let value = netatmoDevice.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
+            let value = netatmoDevice?.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
             if(dataType == 'health_idx') {
                 props.type = 'string';
                 props.enum = HEALTH_IDX_MAP;
