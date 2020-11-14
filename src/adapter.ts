@@ -24,12 +24,12 @@ class NetatmoProperty extends Property {
 const UNITS: { [key: string]: string } = {
     Temperature: "degree celsius",
     Humidity: "percent",
-    Pressure: "mbar",
+    Pressure: "hectopascal",
     Noise: "dB",
     CO2: "ppm",
     Rain: "mm",
     WindStrength: "km/h",
-    Guststrength: "km/h",
+    GustStrength: "km/h",
     WindAngle: "°",
     GustAngle: "°"
 };
@@ -79,7 +79,7 @@ const INTEGERS = [
 const NICE_LABEL: { [key: string]: string } = {
     CO2: "CO₂",
     WindStrength: "Wind strength",
-    Guststrength: "Gust strength",
+    GustStrength: "Gust strength",
     WindAngle: "Wind angle",
     GustAngle: "Gust angle",
     health_idx: "Health index"
@@ -88,8 +88,8 @@ const NICE_LABEL: { [key: string]: string } = {
 const STATION_TYPE: { [key: string]: string } = {
     NAMain: "Netatmo Weather Station",
     NAModule1: "Netatmo Outdoor Module",
-    NAModule2: "Netatmo Rain Gauge",
-    NAModule3: "Netatmo Wind Gauge",
+    NAModule2: "Netatmo Wind Gauge",
+    NAModule3: "Netatmo Rain Gauge",
     NAModule4: "Netatmo Indoor Module",
     NHC: "Netatmo Health Coach"
 };
@@ -106,6 +106,13 @@ class WeatherStation extends Device {
     private canUpdate: boolean;
     private pollingFor: Set<unknown>;
     private iid?: NodeJS.Timeout;
+
+    static getAvailableProperties(dataType: string[]) {
+        if(dataType.includes('Wind')) {
+            return [ 'WindStrength', 'WindAngle', 'GustStrength', 'GustAngle' ];
+        }
+        return dataType;
+    }
 
     constructor(adapter: Adapter, netatmoDevice: any, private parent: any) {
         super(adapter, netatmoDevice._id);
@@ -127,7 +134,8 @@ class WeatherStation extends Device {
             console.warn("Device can both update itself and has a parent.");
         }
 
-        for(const dataType of netatmoDevice.data_type) {
+        const availableProperties = WeatherStation.getAvailableProperties(netatmoDevice.data_type);
+        for(const dataType of availableProperties) {
             const props: any = {
                 title: NICE_LABEL.hasOwnProperty(dataType) ? NICE_LABEL[dataType] : dataType,
                 type: INTEGERS.includes(dataType) ? "integer" : "number"
@@ -228,7 +236,8 @@ class WeatherStation extends Device {
     }
 
     updateProperties(netatmoDevice: any) {
-        for(const dataType of netatmoDevice.data_type) {
+        const availableProperties = WeatherStation.getAvailableProperties(netatmoDevice.data_type);
+        for(const dataType of availableProperties) {
             if(netatmoDevice.dashboard_data.hasOwnProperty(dataType)) {
                 if(dataType === 'health_idx') {
                     this.updateProp(dataType, HEALTH_IDX_MAP[netatmoDevice.dashboard_data[dataType]]);
