@@ -1,7 +1,7 @@
 {
   "name": "netatmo-weather-adapter",
   "display_name": "Netatmo Weather Station",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "WoT adapter for netatmo weather stations",
   "main": "lib/index.js",
   "scripts": {
