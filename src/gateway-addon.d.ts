@@ -44,6 +44,7 @@ declare module 'gateway-addon' {
         public properties: Map<String, Property>;
         public notifyPropertyChanged(property: Property): void;
         public addAction(name: string, metadata: any): void;
+        public connectedNotify(connected: boolean): void;
 
         public events: Map<String, EventDescription>;
         public eventNotify(event: Event): void;
