@@ -155,7 +155,7 @@ class WeatherStation extends Device {
             if(MAX.hasOwnProperty(dataType)) {
                 props.maximum = MAX[dataType];
             }
-            let value = netatmoDevice?.dashboard_data.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
+            let value = netatmoDevice?.dashboard_data?.hasOwnProperty(dataType) ? netatmoDevice.dashboard_data[dataType] : NaN;
             if(dataType == 'health_idx') {
                 props.type = 'string';
                 props.enum = HEALTH_IDX_MAP;
@@ -203,6 +203,10 @@ class WeatherStation extends Device {
         }
 
         this.adapter.handleDeviceAdded(this);
+
+        if(!netatmoDevice.reachable) {
+            this.connectedNotify(false);
+        }
     }
 
     static clamp(num: number, max: number = 100, min: number = 0) {
@@ -236,6 +240,10 @@ class WeatherStation extends Device {
     }
 
     updateProperties(netatmoDevice: any) {
+        this.connectedNotify(netatmoDevice.reachable);
+        if (!netatmoDevice.reachable) {
+            return;
+        }
         const availableProperties = WeatherStation.getAvailableProperties(netatmoDevice.data_type);
         for(const dataType of availableProperties) {
             if(netatmoDevice.dashboard_data.hasOwnProperty(dataType)) {
