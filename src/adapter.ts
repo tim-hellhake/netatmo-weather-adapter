@@ -4,8 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-"use strict";
-
 import { Adapter, Device, Property } from 'gateway-addon';
 import Netatmo from 'netatmo';
 

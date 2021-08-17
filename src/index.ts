@@ -4,8 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
-
 import { NetatmoWeatherAdapter } from './adapter';
 
 export = (addonManager: any, manifest: any, reportError: any) => new NetatmoWeatherAdapter(addonManager, manifest.name, manifest.moziot.config, reportError);
