@@ -315,7 +315,6 @@ export class NetatmoWeatherAdapter extends Adapter {
         }
         catch(e) {
             console.warn(e);
-            this.netatmo = undefined;
             reportError(packageName, "Netatmo API credentials are not valid. Please provide credentials in the add-on settings.");
             return;
         }
