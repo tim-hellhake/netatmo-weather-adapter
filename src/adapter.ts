@@ -15,21 +15,21 @@ class NetatmoProperty extends Property {
     }
 
     async setValue(_value: any) {
-        return Promise.reject("Read-only property");
+        return Promise.reject('Read-only property');
     }
 }
 
 const UNITS: { [key: string]: string } = {
-    Temperature: "degree celsius",
-    Humidity: "percent",
-    Pressure: "hectopascal",
-    Noise: "dB",
-    CO2: "ppm",
-    Rain: "mm",
-    WindStrength: "km/h",
-    GustStrength: "km/h",
-    WindAngle: "°",
-    GustAngle: "°"
+    Temperature: 'degree celsius',
+    Humidity: 'percent',
+    Pressure: 'hectopascal',
+    Noise: 'dB',
+    CO2: 'ppm',
+    Rain: 'mm',
+    WindStrength: 'km/h',
+    GustStrength: 'km/h',
+    WindAngle: '°',
+    GustAngle: '°'
 };
 
 // Min and max are based on official sensor ranges and valid values for the unit.
@@ -55,41 +55,41 @@ const MAX: { [key: string]: number } = {
 };
 
 const CAPABILITES: { [key: string]: string } = {
-    Temperature: "TemperatureProperty",
-    Humidity: "HumidityProperty",
-    Pressure: "BarometricPressureProperty",
-    CO2: "ConcentrationProperty"
+    Temperature: 'TemperatureProperty',
+    Humidity: 'HumidityProperty',
+    Pressure: 'BarometricPressureProperty',
+    CO2: 'ConcentrationProperty'
 };
 
 const DEVICE_CAPS: { [key: string]: string } = {
-    Temperature: "TemperatureSensor",
-    Humidity: "HumiditySensor",
-    Pressure: "BarometricPressureSensor",
-    CO2: "AirQualitySensor"
+    Temperature: 'TemperatureSensor',
+    Humidity: 'HumiditySensor',
+    Pressure: 'BarometricPressureSensor',
+    CO2: 'AirQualitySensor'
 };
 
 const INTEGERS = [
-    "Humidity",
-    "Noise",
-    "CO2"
+    'Humidity',
+    'Noise',
+    'CO2'
 ];
 
 const NICE_LABEL: { [key: string]: string } = {
-    CO2: "CO₂",
-    WindStrength: "Wind strength",
-    GustStrength: "Gust strength",
-    WindAngle: "Wind angle",
-    GustAngle: "Gust angle",
-    health_idx: "Health index"
+    CO2: 'CO₂',
+    WindStrength: 'Wind strength',
+    GustStrength: 'Gust strength',
+    WindAngle: 'Wind angle',
+    GustAngle: 'Gust angle',
+    health_idx: 'Health index'
 };
 
 const STATION_TYPE: { [key: string]: string } = {
-    NAMain: "Netatmo Weather Station",
-    NAModule1: "Netatmo Outdoor Module",
-    NAModule2: "Netatmo Wind Gauge",
-    NAModule3: "Netatmo Rain Gauge",
-    NAModule4: "Netatmo Indoor Module",
-    NHC: "Netatmo Health Coach"
+    NAMain: 'Netatmo Weather Station',
+    NAModule1: 'Netatmo Outdoor Module',
+    NAModule2: 'Netatmo Wind Gauge',
+    NAModule3: 'Netatmo Rain Gauge',
+    NAModule4: 'Netatmo Indoor Module',
+    NHC: 'Netatmo Health Coach'
 };
 
 const HEALTH_IDX_MAP = [
@@ -126,23 +126,23 @@ class WeatherStation extends Device {
         this.canUpdate = netatmoDevice.type == this.updatableType;
         this.parent = parent;
         this.pollingFor = new Set();
-        this["@type"] = [];
+        this['@type'] = [];
 
         if(this.canUpdate && this.parent) {
-            console.warn("Device can both update itself and has a parent.");
+            console.warn('Device can both update itself and has a parent.');
         }
 
         const availableProperties = WeatherStation.getAvailableProperties(netatmoDevice.data_type);
         for(const dataType of availableProperties) {
             const props: any = {
                 title: NICE_LABEL.hasOwnProperty(dataType) ? NICE_LABEL[dataType] : dataType,
-                type: INTEGERS.includes(dataType) ? "integer" : "number"
+                type: INTEGERS.includes(dataType) ? 'integer' : 'number'
             };
             if(UNITS.hasOwnProperty(dataType)) {
                 props.unit = UNITS[dataType];
             }
             if(CAPABILITES.hasOwnProperty(dataType)) {
-                props["@type"] = CAPABILITES[dataType];
+                props['@type'] = CAPABILITES[dataType];
             }
             if(DEVICE_CAPS.hasOwnProperty(dataType) && !this['@type'].includes(DEVICE_CAPS[dataType])) {
                 this['@type'].push(DEVICE_CAPS[dataType]);
@@ -169,10 +169,10 @@ class WeatherStation extends Device {
 
         if(netatmoDevice.battery_percent) {
             this.properties.set('battery', new NetatmoProperty(this, 'battery', {
-                title: "Battery",
-                type: "number",
-                unit: "percent",
-                "@type": "LevelProperty"
+                title: 'Battery',
+                type: 'number',
+                unit: 'percent',
+                '@type': 'LevelProperty'
             }, netatmoDevice.battery_percent));
         }
 
@@ -315,7 +315,7 @@ export class NetatmoWeatherAdapter extends Adapter {
         }
         catch(e) {
             console.warn(e);
-            reportError(packageName, "Netatmo API credentials are not valid. Please provide credentials in the add-on settings.");
+            reportError(packageName, 'Netatmo API credentials are not valid. Please provide credentials in the add-on settings.');
             return;
         }
 
@@ -401,7 +401,7 @@ export class NetatmoWeatherAdapter extends Adapter {
                 }
             }
             else {
-                // this.sendPairingPrompt("Could not fetch station data. Ensure the provided credentials are valid.");
+                // this.sendPairingPrompt('Could not fetch station data. Ensure the provided credentials are valid.');
                 console.error(err);
             }
         });
@@ -412,7 +412,7 @@ export class NetatmoWeatherAdapter extends Adapter {
                 }
             }
             else {
-                // this.sendPairingPrompt("Could not fetch healthy home coach data. Ensure the provided credentials are valid.");
+                // this.sendPairingPrompt('Could not fetch healthy home coach data. Ensure the provided credentials are valid.');
                 console.error(err);
             }
         });
