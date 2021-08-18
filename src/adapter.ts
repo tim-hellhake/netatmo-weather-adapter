@@ -324,24 +324,27 @@ export class NetatmoWeatherAdapter extends Adapter {
     }
 
     addDevice(device: any, parent?: any) {
-        let instance;
-        if(!(device._id in this.devices)) {
-            if(device.type === 'NHC') {
-                instance = new HealthCoach(this, device, parent);
-            }
-            else {
-                instance = new WeatherStation(this, device, parent);
-            }
-        }
-        else {
-            instance = this.getDevice(device._id);
-            instance.startPolling();
-        }
+        let instance = this.getOrCreateDevice(device, parent);
+
         if(device.modules && device.modules.length) {
             for(const d of device.modules) {
                 this.addDevice(d, instance);
             }
         }
+    }
+
+    private getOrCreateDevice(device: any, parent?: any) {
+        if(device._id in this.devices) {
+            let instance = this.getDevice(device._id);
+            instance.startPolling();
+            return instance;
+        }
+
+        if(device.type === 'NHC') {
+            return new HealthCoach(this, device, parent);
+        }
+
+        return new WeatherStation(this, device, parent);
     }
 
     handleDeviceAdded(device: WeatherStation | HealthCoach) {
