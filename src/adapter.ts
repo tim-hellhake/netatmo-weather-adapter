@@ -1,3 +1,4 @@
+import { NetatmoScope } from './netatmo';
 /**
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -5,7 +6,7 @@
  */
 
 import { Adapter, Device, Property } from 'gateway-addon';
-import Netatmo from 'netatmo';
+import Netatmo, { NetatmoDevice, NNetatmoScope } from './netatmo';
 
 class NetatmoProperty extends Property {
     constructor(device: Device, name: string, description: any, value: any) {
@@ -112,7 +113,7 @@ class WeatherStation extends Device {
         return dataType;
     }
 
-    constructor(adapter: Adapter, netatmoDevice: any, private parent: any) {
+    constructor(adapter: Adapter, netatmoDevice: NetatmoDevice, private parent?: WeatherStation) {
         super(adapter, netatmoDevice._id);
         this.name = netatmoDevice.module_name || netatmoDevice.station_name || netatmoDevice.name;
         this.description = STATION_TYPE[netatmoDevice.type] + ' for ' + (netatmoDevice.station_name || netatmoDevice.name);
@@ -312,6 +313,9 @@ export class NetatmoWeatherAdapter extends Adapter {
 
         try {
             this.netatmo = new Netatmo(config);
+            if(this.netatmo.needsAuth) {
+                this.authenticate(packageName, reportError);
+            }
         }
         catch(e) {
             console.warn(e);
@@ -321,6 +325,22 @@ export class NetatmoWeatherAdapter extends Adapter {
 
         addonManager.addAdapter(this);
         this.startPairing();
+    }
+
+    async authenticate(packageName: string, reportError: (string, string, string)=> void) {
+        //TODO probably have reportError on the instance
+        //TODO somehow be able to run this at runtime (during pairing?)
+        if(!this.netatmo) {
+            return;
+        }
+        //TODO generate endpoint for callback
+        const iterable = this.netatmo.authenticate([NetatmoScope.read_homecoach, NetatmoScope.read_station], '');
+        const url = iterable.next();
+        if(url) {
+            reportError(packageName, 'Please authorize the adapter to access your Netatmo account.', url);
+            //wait for callback and send via
+            await iterable.next(result);
+        }
     }
 
     addDevice(device: any, parent?: any) {
@@ -359,62 +379,42 @@ export class NetatmoWeatherAdapter extends Adapter {
 
     async updateDevice(device: WeatherStation | HealthCoach) {
         if(device instanceof HealthCoach) {
-            this.netatmo?.getHealthyHomeCoachData({
-                device_id: device.id
-            }, (err, data) => {
-                if(!err) {
-                    const coach = data[0];
-                    device.updateProperties(coach);
-                }
-                else {
-                    console.error(err);
-                }
-            });
+            this.netatmo?.getHealthyHomeCoachData(device.id).then((data) => {
+                const coach = data[0];
+                device.updateProperties(coach);
+            }, (err) => console.error(err));
         }
         else {
-            this.netatmo?.getStationsData({
-                device_id: device.id
-            }, (err, data) => {
-                if(!err) {
-                    const station = data[0];
-                    device.updateProperties(station);
-                    if(station.modules && station.modules.length) {
-                        for(const module of station.modules) {
-                            if(module._id in this.devices) {
-                                this.getDevice(module._id).updateProperties(module);
-                            }
+            this.netatmo?.getStationsData(device.id).then((data) => {
+                const station = data[0];
+                device.updateProperties(station);
+                if(station.modules && station.modules.length) {
+                    for(const module of station.modules) {
+                        if(module._id in this.devices) {
+                            this.getDevice(module._id).updateProperties(module);
                         }
                     }
                 }
-                else {
-                    console.error(err);
-                }
-            });
+            }, (err) => console.error(err));
         }
     }
 
     startPairing() {
-        this.netatmo?.getStationsData((err: any, devices: any) => {
-            if(!err) {
-                for(const device of devices) {
-                    this.addDevice(device);
-                }
+        this.netatmo?.getStationsData().then((devices) => {
+            for(const device of devices) {
+                this.addDevice(device);
             }
-            else {
-                // this.sendPairingPrompt('Could not fetch station data. Ensure the provided credentials are valid.');
-                console.error(err);
-            }
+        }, (err) => {
+            // this.sendPairingPrompt('Could not fetch station data. Ensure the provided credentials are valid.');
+            console.error(err);
         });
-        this.netatmo?.getHealthyHomeCoachData((err: any, devices: any) => {
-            if(!err) {
-                for(const device of devices) {
-                    this.addDevice(device);
-                }
+        this.netatmo?.getHealthyHomeCoachData().then((devices) => {
+            for(const device of devices) {
+                this.addDevice(device);
             }
-            else {
-                // this.sendPairingPrompt('Could not fetch healthy home coach data. Ensure the provided credentials are valid.');
-                console.error(err);
-            }
+        }, (err) => {
+            // this.sendPairingPrompt('Could not fetch healthy home coach data. Ensure the provided credentials are valid.');
+            console.error(err);
         });
     }
 
@@ -423,6 +423,9 @@ export class NetatmoWeatherAdapter extends Adapter {
             if(this.devices.hasOwnProperty(d)) {
                 this.getDevice(d).stopPolling();
             }
+        }
+        if(this.netatmo) {
+            this.netatmo.unInit();
         }
         return super.unload();
     }
