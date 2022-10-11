@@ -64,6 +64,7 @@ declare module 'gateway-addon' {
         public startPairing(_timeoutSeconds: number): void;
         public getDevice(_id: any): any;
         public unload(): void;
+        public sendPairingPrompt(message: string, url?: string): void;
     }
 
     class Database {
@@ -73,5 +74,31 @@ declare module 'gateway-addon' {
         public loadConfig(): Promise<any>;
         public saveConfig(config: any): Promise<void>;
         public close(): void;
+    }
+
+    class APIResponse {
+        constructor({ status, contentType, content }?: { status: number, contentType?: string, content?: string });
+
+        getStatus(): number;
+        getContentType(): string | undefined;
+        getContent(): string | undefined;
+        asDict(): { status: number, contentType?: string, content?: string };
+    }
+
+    class APIRequest {
+        getMethod(): string;
+        getPath(): string;
+        getQuery(): Record<string, unknown>;
+        getBody(): Record<string, unknown>;
+    }
+
+    class APIHandler {
+        constructor(addonManageR: any, packageName: string, { verbose }?: Record<string, unknown>);
+
+        isVerbose(): boolean;
+        getPackageName(): string;
+        getGatewayVersion(): string | undefined;
+        handleRequest(request: APIRequest): Promise<APIResponse>;
+        unload: Promise<void>;
     }
 }

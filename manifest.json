@@ -29,15 +29,26 @@
           "type": "string",
           "title": "API Client Secret"
         },
-        "username": {
+        "baseUrl": {
           "type": "string",
-          "title": "Username"
-        },
-        "password": {
-          "type": "string",
-          "title": "Password"
+          "title": "Base URL of your gateway, for example http://192.168.0.2:8080"
         }
       }
     }
-  }
+  },
+  "content_scripts": [
+    {
+      "css": [
+        "views/styles.css"
+      ],
+      "js": [
+        "lib/extension.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    "lib/extension.js",
+    "views/*.css",
+    "views/*.html"
+  ]
 }

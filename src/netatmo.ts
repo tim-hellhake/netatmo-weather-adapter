@@ -1,4 +1,3 @@
-import { NetatmoDevice } from './netatmo';
 /**
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,9 +14,12 @@ export enum NetatmoScope {
 interface NetatmoConfig {
     client_id: string;
     client_secret: string;
-    token?: string;
     expires?: number;
     refresh_token?: string;
+}
+
+interface AuthenticatedNetatmoConfig extends NetatmoConfig {
+    token?: string;
 }
 
 interface NetatmoTokenResponse {
@@ -64,7 +66,7 @@ enum DataType {
     HealthIndex = 'health_idx'
 }
 
-export interface NetatmoDevice {
+interface NetatmoDevice {
     _id: string;
     reachable: boolean;
     type: NetatmoDeviceType;
@@ -202,10 +204,14 @@ interface NetatmoHealthyHomeCoachDevice extends NetatmoDevice {
     name: string;
 }
 
+export type NetatmoAPIDevice = NetatmoStationDevice | NetatmoHealthyHomeCoachDevice | StationModule;
+
 export default class Netatmo {
     private refreshInterval?: NodeJS.Timeout;
+    private config: AuthenticatedNetatmoConfig;
 
-    constructor(private config: NetatmoConfig) {
+    constructor(config: NetatmoConfig) {
+        this.config = config;
         if(config.refresh_token) {
             this.initRefresh();
         }
@@ -249,7 +255,7 @@ export default class Netatmo {
     }
 
     get needsAuth() {
-        return Boolean(this.config.token);
+        return !this.config.token;
     }
 
     unInit() {
@@ -288,6 +294,10 @@ export default class Netatmo {
         this.config.token = data.access_token;
         this.config.refresh_token = data.refresh_token;
         this.initRefresh();
+        return {
+            expires: this.config.expires,
+            refresh_token: this.config.refresh_token,
+        };
     }
 
     async getHealthyHomeCoachData(deviceId?: string): Promise<NetatmoHealthyHomeCoachDevice[]> {

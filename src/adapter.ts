@@ -1,4 +1,3 @@
-import { NetatmoScope } from './netatmo';
 /**
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6,7 +5,9 @@ import { NetatmoScope } from './netatmo';
  */
 
 import { Adapter, Device, Property } from 'gateway-addon';
-import Netatmo, { NetatmoDevice, NNetatmoScope } from './netatmo';
+import Netatmo, { NetatmoAPIDevice, NetatmoScope } from './netatmo';
+import { addToConfig } from './config';
+import { CallbackListener, CallbackAPIHandler } from './callback';
 
 class NetatmoProperty extends Property {
     constructor(device: Device, name: string, description: any, value: any) {
@@ -113,7 +114,7 @@ class WeatherStation extends Device {
         return dataType;
     }
 
-    constructor(adapter: Adapter, netatmoDevice: NetatmoDevice, private parent?: WeatherStation) {
+    constructor(adapter: Adapter, netatmoDevice: NetatmoAPIDevice, private parent?: WeatherStation) {
         super(adapter, netatmoDevice._id);
         this.name = netatmoDevice.module_name || netatmoDevice.station_name || netatmoDevice.name;
         this.description = STATION_TYPE[netatmoDevice.type] + ' for ' + (netatmoDevice.station_name || netatmoDevice.name);
@@ -238,7 +239,7 @@ class WeatherStation extends Device {
         }
     }
 
-    updateProperties(netatmoDevice: any) {
+    updateProperties(netatmoDevice: NetatmoAPIDevice) {
         this.connectedNotify(netatmoDevice.reachable);
         if (!netatmoDevice.reachable) {
             return;
@@ -307,39 +308,46 @@ class HealthCoach extends WeatherStation {
 
 export class NetatmoWeatherAdapter extends Adapter {
     private netatmo?: Netatmo;
+    private apiHandler: CallbackAPIHandler;
 
-    constructor(addonManager: any, packageName: string, config: any, reportError: any) {
+    constructor(addonManager: any, private packageName: string, private config: any, private reportError: (name: string, errorMessage: string, url?: string) => void) {
         super(addonManager, 'NetatmoWeatherAdapter', packageName);
+        this.apiHandler = new CallbackAPIHandler(addonManager, packageName);
 
         try {
             this.netatmo = new Netatmo(config);
             if(this.netatmo.needsAuth) {
-                this.authenticate(packageName, reportError);
+                this.authenticate();
             }
         }
         catch(e) {
             console.warn(e);
-            reportError(packageName, 'Netatmo API credentials are not valid. Please provide credentials in the add-on settings.');
+            this.reportError(packageName, 'Netatmo API credentials are not valid. Please provide credentials in the add-on settings.');
             return;
         }
 
         addonManager.addAdapter(this);
-        this.startPairing();
     }
 
-    async authenticate(packageName: string, reportError: (string, string, string)=> void) {
-        //TODO probably have reportError on the instance
-        //TODO somehow be able to run this at runtime (during pairing?)
+    async authenticate() {
         if(!this.netatmo) {
             return;
         }
-        //TODO generate endpoint for callback
-        const iterable = this.netatmo.authenticate([NetatmoScope.read_homecoach, NetatmoScope.read_station], '');
-        const url = iterable.next();
+        const redirectURI = `${this.config.baseUrl}/extensions/${this.packageName}`;
+        const iterable = this.netatmo.authenticate([NetatmoScope.read_homecoach, NetatmoScope.read_station], redirectURI);
+        const { value: url } = await iterable.next() as { value: string };
         if(url) {
-            reportError(packageName, 'Please authorize the adapter to access your Netatmo account.', url);
-            //wait for callback and send via
-            await iterable.next(result);
+            const listener = new CallbackListener('callback-listener');
+            this.apiHandler.addListener(listener);
+            this.sendPairingPrompt('Please authorize the adapter to access your Netatmo account.', url);
+            const result = await listener.successPromise;
+            if (typeof result !== "string") {
+                console.error("Got unknown response from callback handler");
+                return;
+            }
+            const { value: config } = await iterable.next(result) as { value: { refresh_token: string, expires: number } };
+            await addToConfig(this.packageName, config);
+            this.addDevices();
         }
     }
 
@@ -399,7 +407,7 @@ export class NetatmoWeatherAdapter extends Adapter {
         }
     }
 
-    startPairing() {
+    addDevices() {
         this.netatmo?.getStationsData().then((devices) => {
             for(const device of devices) {
                 this.addDevice(device);
@@ -416,6 +424,13 @@ export class NetatmoWeatherAdapter extends Adapter {
             // this.sendPairingPrompt('Could not fetch healthy home coach data. Ensure the provided credentials are valid.');
             console.error(err);
         });
+    }
+
+    async startPairing() {
+        if (this.netatmo?.needsAuth) {
+            await this.authenticate();
+        }
+        this.addDevices();
     }
 
     unload() {
