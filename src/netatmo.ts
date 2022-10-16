@@ -5,10 +5,11 @@
  */
 
 import fetch from 'node-fetch';
+import { URLSearchParams } from 'url';
 
 export enum NetatmoScope {
-    'read_station',
-    'read_homecoach',
+    'read_station' = 'read_station',
+    'read_homecoach' = 'read_homecoach',
 }
 
 interface NetatmoConfig {
@@ -38,8 +39,8 @@ export enum NetatmoDeviceType {
 }
 
 enum Trend {
-    'up',
-    'down'
+    'up' = 'up',
+    'down' = 'down'
 }
 
 interface DashboardData {
@@ -220,7 +221,7 @@ export default class Netatmo {
     }
 
     private initRefresh() {
-        const expiresIn = Date.now() - (this.config.expires ?? 0);
+        const expiresIn = (this.config.expires ?? 0) - Date.now();
         if (expiresIn > 0 && this.config.token) {
             this.refreshInterval = setTimeout(() => this.refresh(), expiresIn);
         }
@@ -247,6 +248,9 @@ export default class Netatmo {
         });
         if(!response.ok || response.status !== 200) {
             console.error('Failed to refresh token.');
+            this.config.refresh_token = undefined;
+            this.config.expires = undefined;
+            this.updateConfig();
             return;
         }
         const data = await response.json() as NetatmoTokenResponse;
@@ -258,7 +262,7 @@ export default class Netatmo {
     }
 
     get needsAuth() {
-        return !this.config.token;
+        return !this.config.refresh_token;
     }
 
     unInit() {
@@ -269,15 +273,11 @@ export default class Netatmo {
 
     async* authenticate(scopes: NetatmoScope[], redirectUri: string) {
         const state = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
-        const redirectionTarget: string = yield `https://api.netatmo.com/oauth2/authorize?client_id=${this.config.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join('+')}&state=${encodeURIComponent(state)}`;
-        const parsedRedirectedURL = new URL(redirectionTarget);
-        if(!parsedRedirectedURL.searchParams.has('state') || parsedRedirectedURL.searchParams.get('state') !== state || !parsedRedirectedURL.searchParams.has('code')) {
-            throw new Error(`Authentication flow failed. Possible error: ${parsedRedirectedURL.searchParams.get('error')}`);
+        const redirectResultParams: { [key: string]: string } = yield `https://api.netatmo.com/oauth2/authorize?client_id=${this.config.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join('+')}&state=${encodeURIComponent(state)}`;
+        if(!redirectResultParams.state || redirectResultParams.state !== state || !redirectResultParams.code) {
+            throw new Error(`Authentication flow failed. Possible error: ${redirectResultParams.error}`);
         }
-        const code = parsedRedirectedURL.searchParams.get('code');
-        if(!code) {
-            throw new Error('Authentication flow could not retrieve the code.');
-        }
+        const code = redirectResultParams.code;
         const body = new URLSearchParams();
         body.append('scope', scopes.join(' '));
         body.append('code', code);

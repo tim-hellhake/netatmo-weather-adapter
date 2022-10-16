@@ -42,10 +42,11 @@
     "views/styles.css"
   ],
   "dependencies": {
-    "node-fetch": "^3.2.10"
+    "node-fetch": "^2.6.7"
   },
   "devDependencies": {
     "@types/node": "^16.6.2",
+    "@types/node-fetch": "^2.6.2",
     "nlf": "^2.1.1",
     "typescript": "^4.8.4"
   },

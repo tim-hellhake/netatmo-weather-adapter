@@ -188,14 +188,14 @@ class WeatherStation<T extends NetatmoAPIDevice> extends Device {
                 props.maximum = MAX[dataType];
             }
             let value: string | number = netatmoDevice?.dashboard_data?.hasOwnProperty(dataType) ? (netatmoDevice.dashboard_data as APIDashboardData)[dataType] : NaN;
-            if(dataType == 'health_idx') {
+            if(dataType == DataType.HealthIndex) {
                 props.type = 'string';
                 props.enum = HEALTH_IDX_MAP;
-                if(isNaN(value)) {
+                if(isNaN(value as number)) {
                     value = '';
                 }
                 else {
-                    value = HEALTH_IDX_MAP[value];
+                    value = HEALTH_IDX_MAP[value as number];
                 }
             }
             this.properties.set(dataType, new NetatmoProperty(this, dataType, props, value));
@@ -377,11 +377,13 @@ export class NetatmoWeatherAdapter extends Adapter {
             this.apiHandler.addListener(listener);
             this.sendPairingPrompt('Please authorize the adapter to access your Netatmo account.', url);
             const result = await listener.successPromise;
-            if (typeof result !== "string") {
-                console.error("Got unknown response from callback handler");
+            this.apiHandler.removeListener(listener);
+            if (typeof result !== "object" || result === null) {
+                iterable?.throw(new Error("Unhandelable result"));
+                console.error("Got unknown response from callback handler", result);
                 return;
             }
-            await iterable.next(result);
+            await iterable.next(result as { [key: string]: string });
             this.addDevices();
         }
     }

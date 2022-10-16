@@ -8,7 +8,7 @@ class CallbackExtension extends window.Extension {
     private content: string;
 
     constructor() {
-        super('netatmo-energy-adapter');
+        super('netatmo-weather-adapter');
 
         this.content = '';
 
@@ -19,7 +19,7 @@ class CallbackExtension extends window.Extension {
 
     load() {
         this.content = '';
-        return fetch(`/extensions/${this.id}/src/views/callback.html`)
+        return fetch(`/extensions/${this.id}/views/callback.html`)
             .then((res) => res.text())
             .then((text) => {
                 this.content = text;
