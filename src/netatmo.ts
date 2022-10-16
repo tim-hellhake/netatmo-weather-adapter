@@ -28,7 +28,7 @@ interface NetatmoTokenResponse {
     refresh_token: string;
 }
 
-enum NetatmoDeviceType {
+export enum NetatmoDeviceType {
     Station = 'NAMain',
     Outdoor = 'NAModule1',
     Wind = 'NAModule2',
@@ -46,16 +46,7 @@ interface DashboardData {
     time_utc: number;
 }
 
-interface TemperatureDashboardData extends DashboardData {
-    Temperature: number;
-    min_temp: number;
-    max_temp: number;
-    date_min_temp: number;
-    date_max_temp: number;
-    temp_trend: Trend;
-}
-
-enum DataType {
+export enum DataType {
     Temperature = 'Temperature',
     Humidity = 'Humidity',
     CO2 = 'CO2',
@@ -64,6 +55,15 @@ enum DataType {
     Wind = 'Wind',
     Rain = 'Rain',
     HealthIndex = 'health_idx'
+}
+
+interface TemperatureDashboardData extends DashboardData {
+    [DataType.Temperature]: number;
+    min_temp: number;
+    max_temp: number;
+    date_min_temp: number;
+    date_max_temp: number;
+    temp_trend: Trend;
 }
 
 interface NetatmoDevice {
@@ -86,8 +86,8 @@ interface NetatmoModuleDevice extends NetatmoDevice {
 }
 
 interface IndoorModuleDashboardData extends TemperatureDashboardData {
-    CO2: number;
-    Humidity: number;
+    [DataType.CO2]: number;
+    [DataType.Humidity]: number;
 }
 
 interface NetatmoIndoorModuleDevice extends NetatmoModuleDevice {
@@ -97,7 +97,7 @@ interface NetatmoIndoorModuleDevice extends NetatmoModuleDevice {
 }
 
 interface OutdoorModuleDashboardData extends TemperatureDashboardData {
-    Humidity: number;
+    [DataType.Humidity]: number;
 }
 
 interface NetatmoOudoorModuleDevice extends NetatmoModuleDevice {
@@ -107,7 +107,7 @@ interface NetatmoOudoorModuleDevice extends NetatmoModuleDevice {
 }
 
 interface RainModuleDashboardData extends DashboardData {
-    Rain: number;
+    [DataType.Rain]: number;
     sum_rain_24: number;
     sum_rain_1: number;
 }
@@ -118,7 +118,7 @@ interface NetatmoRainModuleDevice extends NetatmoModuleDevice {
     dashboard_data: RainModuleDashboardData;
 }
 
-interface WindModuleDashboardData extends DashboardData {
+export interface WindModuleDashboardData extends DashboardData {
     WindStrength: number;
     WindAngle: number;
     GustStrength: number;
@@ -137,15 +137,15 @@ interface NetatmoWindModuleDevice extends NetatmoModuleDevice {
 type StationModule = NetatmoIndoorModuleDevice | NetatmoOudoorModuleDevice | NetatmoRainModuleDevice | NetatmoWindModuleDevice;
 
 interface StationDashboardData extends TemperatureDashboardData {
-    CO2: number;
-    Humidity: number;
-    Noise: number;
-    Pressure: number;
+    [DataType.CO2]: number;
+    [DataType.Humidity]: number;
+    [DataType.Noise]: number;
+    [DataType.Pressure]: number;
     AbsolutePressure: number;
     pressure_trend: Trend;
 }
 
-interface NetatmoStationDevice extends NetatmoDevice {
+export interface NetatmoStationDevice extends NetatmoDevice {
     type: NetatmoDeviceType.Station;
     modules: StationModule[];
     data_type: [ DataType.Temperature, DataType.Humidity, DataType.Noise, DataType.CO2, DataType.Pressure ];
@@ -175,15 +175,15 @@ enum HealthIndex {
 }
 
 interface HealthyHomeCoachDashboardData extends TemperatureDashboardData {
-    CO2: number;
-    Humidity: number;
-    Noise: number;
-    Pressure: number;
+    [DataType.CO2]: number;
+    [DataType.Humidity]: number;
+    [DataType.Noise]: number;
+    [DataType.Pressure]: number;
     AbsolutePressure: number;
-    health_idx: HealthIndex;
+    [DataType.HealthIndex]: HealthIndex;
 }
 
-interface NetatmoHealthyHomeCoachDevice extends NetatmoDevice {
+export interface NetatmoHealthyHomeCoachDevice extends NetatmoDevice {
     type: NetatmoDeviceType.Coach;
     wifi_status: number;
     co2_calibrating: boolean;
@@ -204,13 +204,15 @@ interface NetatmoHealthyHomeCoachDevice extends NetatmoDevice {
     name: string;
 }
 
+export type NetatmoStationRelatedDevice = NetatmoStationDevice | StationModule;
 export type NetatmoAPIDevice = NetatmoStationDevice | NetatmoHealthyHomeCoachDevice | StationModule;
+export type APIDashboardData = StationDashboardData & HealthyHomeCoachDashboardData & OutdoorModuleDashboardData & WindModuleDashboardData & RainModuleDashboardData & IndoorModuleDashboardData;
 
 export default class Netatmo {
     private refreshInterval?: NodeJS.Timeout;
     private config: AuthenticatedNetatmoConfig;
 
-    constructor(config: NetatmoConfig) {
+    constructor(config: NetatmoConfig, private setConfig: (config: Record<string, any>) => Promise<void>) {
         this.config = config;
         if(config.refresh_token) {
             this.initRefresh();
@@ -251,6 +253,7 @@ export default class Netatmo {
         this.config.token = data.access_token;
         this.config.expires = Date.now() + (data.expires_in * 1000);
         this.config.refresh_token = data.refresh_token;
+        await this.updateConfig();
         this.initRefresh();
     }
 
@@ -293,11 +296,15 @@ export default class Netatmo {
         this.config.expires = Date.now() + (data.expires_in * 1000);
         this.config.token = data.access_token;
         this.config.refresh_token = data.refresh_token;
+        await this.updateConfig();
         this.initRefresh();
-        return {
+    }
+
+    private updateConfig() {
+        return this.setConfig({
             expires: this.config.expires,
             refresh_token: this.config.refresh_token,
-        };
+        });
     }
 
     async getHealthyHomeCoachData(deviceId?: string): Promise<NetatmoHealthyHomeCoachDevice[]> {

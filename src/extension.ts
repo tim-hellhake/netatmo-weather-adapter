@@ -4,22 +4,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-namespace window {
-    declare class Extension {
-        view: Element;
-        id: string;
-    }
-
-    declare interface API {
-        postJson(route: string, data: any): Promise<void>;
-    }
-}
-
 class CallbackExtension extends window.Extension {
-    private content?: string;
+    private content: string;
 
     constructor() {
         super('netatmo-energy-adapter');
+
+        this.content = '';
 
         if (!window.Extension.prototype.hasOwnProperty('load')) {
             this.load();

@@ -93,7 +93,7 @@ declare module 'gateway-addon' {
     }
 
     class APIHandler {
-        constructor(addonManageR: any, packageName: string, { verbose }?: Record<string, unknown>);
+        constructor(addonManager: any, packageName: string, { verbose }?: Record<string, unknown>);
 
         isVerbose(): boolean;
         getPackageName(): string;
