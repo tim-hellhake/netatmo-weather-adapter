@@ -32,15 +32,25 @@
     "manifest.json",
     "lib/index.js",
     "lib/adapter.js",
+    "lib/callback.js",
+    "lib/config.js",
+    "lib/extension.js",
+    "lib/netatmo.js",
     "LICENSE",
-    "SHA256SUMS"
+    "SHA256SUMS",
+    "views/callback.html",
+    "views/styles.css"
   ],
   "dependencies": {
-    "netatmo": "^2.3.0"
+    "node-fetch": "^2.6.7"
   },
   "devDependencies": {
     "@types/node": "^16.6.2",
+    "@types/node-fetch": "^2.6.2",
     "nlf": "^2.1.1",
-    "typescript": "^4.3.5"
+    "typescript": "^4.8.4"
+  },
+  "engines": {
+    "node": ">= 10"
   }
 }
